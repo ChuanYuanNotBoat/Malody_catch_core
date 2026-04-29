@@ -35,6 +35,18 @@ typedef struct mce_note_snapshot
     int32_t offset_ms;
 } mce_note_snapshot;
 
+typedef struct mce_chart_summary
+{
+    int32_t note_count;
+    int32_t bpm_count;
+    uint64_t revision;
+    int32_t can_undo;
+    int32_t can_redo;
+    char title[128];
+    char artist[128];
+    char difficulty[64];
+} mce_chart_summary;
+
 MCE_API mce_session *mce_session_create(void);
 MCE_API void mce_session_destroy(mce_session *session);
 MCE_API const char *mce_session_last_error(const mce_session *session);
@@ -50,6 +62,8 @@ MCE_API int32_t mce_session_get_note_snapshots(const mce_session *session,
                                                int32_t start_index,
                                                int32_t max_count,
                                                mce_note_snapshot *out_notes);
+MCE_API int32_t mce_session_get_chart_summary(const mce_session *session,
+                                              mce_chart_summary *out_summary);
 
 MCE_API int32_t mce_session_add_normal_note(mce_session *session,
                                             const char *id,

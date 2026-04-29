@@ -142,6 +142,25 @@ int32_t mce_session_get_note_snapshots(const mce_session *session,
     return static_cast<int32_t>(count);
 }
 
+int32_t mce_session_get_chart_summary(const mce_session *session,
+                                      mce_chart_summary *out_summary)
+{
+    if (!session || !out_summary)
+        return 0;
+
+    const auto &chart = session->impl.chart();
+    std::memset(out_summary, 0, sizeof(*out_summary));
+    out_summary->note_count = static_cast<int32_t>(chart.notes.size());
+    out_summary->bpm_count = static_cast<int32_t>(chart.bpmList.size());
+    out_summary->revision = session->impl.revision();
+    out_summary->can_undo = ok(session->impl.canUndo());
+    out_summary->can_redo = ok(session->impl.canRedo());
+    copyCString(out_summary->title, static_cast<int>(sizeof(out_summary->title)), chart.meta.title);
+    copyCString(out_summary->artist, static_cast<int>(sizeof(out_summary->artist)), chart.meta.artist);
+    copyCString(out_summary->difficulty, static_cast<int>(sizeof(out_summary->difficulty)), chart.meta.difficulty);
+    return 1;
+}
+
 int32_t mce_session_add_normal_note(mce_session *session,
                                     const char *id,
                                     mce_beat beat,

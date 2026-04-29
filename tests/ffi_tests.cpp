@@ -84,6 +84,34 @@ bool testBatchSnapshots()
     return ok;
 }
 
+bool testChartSummarySnapshot()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool added = mce_session_add_normal_note(session, "s1", mce_beat{1, 0, 1}, 100) == 1 &&
+                       mce_session_add_normal_note(session, "s2", mce_beat{2, 0, 1}, 200) == 1;
+    if (!added)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_chart_summary summary{};
+    const bool ok = mce_session_get_chart_summary(session, &summary) == 1 &&
+                    summary.note_count == 2 &&
+                    summary.bpm_count >= 1 &&
+                    summary.revision > 0 &&
+                    summary.can_undo == 1 &&
+                    std::strlen(summary.title) > 0 &&
+                    std::strlen(summary.artist) > 0 &&
+                    std::strlen(summary.difficulty) > 0;
+
+    mce_session_destroy(session);
+    return ok;
+}
+
 bool testRainAddMoveAndSnapshot()
 {
     mce_session *session = mce_session_create();
@@ -213,6 +241,7 @@ int main()
         {"Invalid add reports error", &testInvalidAddReportsError},
         {"Version and ABI", &testVersionAndAbi},
         {"Batch snapshots", &testBatchSnapshots},
+        {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},
         {"Sound add snapshot and validation", &testSoundAddSnapshotAndValidation},
