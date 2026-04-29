@@ -2,6 +2,11 @@
 
 #include <cstdio>
 #include <cstring>
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 namespace
 {
@@ -255,6 +260,58 @@ bool testSoundAddSnapshotAndValidation()
     mce_session_destroy(session);
     return invalidRejected;
 }
+
+bool testExportedSymbols()
+{
+#if defined(_WIN32)
+    HMODULE module = GetModuleHandleA("malody_catch_core_ffi.dll");
+    if (!module)
+        module = LoadLibraryA("malody_catch_core_ffi.dll");
+    if (!module)
+        return false;
+
+    const char *symbols[] = {
+        "mce_core_version",
+        "mce_ffi_abi_version",
+        "mce_session_create",
+        "mce_session_copy_last_error",
+        "mce_session_get_note_snapshots",
+        "mce_session_get_chart_summary",
+        "mce_session_add_rain_note",
+        "mce_session_add_sound_note"};
+    for (const char *symbol : symbols)
+    {
+        if (!GetProcAddress(module, symbol))
+            return false;
+    }
+    return true;
+#else
+    void *module = dlopen("libmalody_catch_core_ffi.so", RTLD_NOW);
+    if (!module)
+        return false;
+
+    const char *symbols[] = {
+        "mce_core_version",
+        "mce_ffi_abi_version",
+        "mce_session_create",
+        "mce_session_copy_last_error",
+        "mce_session_get_note_snapshots",
+        "mce_session_get_chart_summary",
+        "mce_session_add_rain_note",
+        "mce_session_add_sound_note"};
+    bool ok = true;
+    for (const char *symbol : symbols)
+    {
+        if (!dlsym(module, symbol))
+        {
+            ok = false;
+            break;
+        }
+    }
+    dlclose(module);
+    return ok;
+#endif
+}
 } // namespace
 
 int main()
@@ -275,6 +332,7 @@ int main()
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},
         {"Sound add snapshot and validation", &testSoundAddSnapshotAndValidation},
+        {"Exported symbols", &testExportedSymbols},
     };
 
     int failed = 0;

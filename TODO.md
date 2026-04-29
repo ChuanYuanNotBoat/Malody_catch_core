@@ -52,7 +52,7 @@
 - [x] 增加 chart summary snapshot：note count、BPM count、meta summary。
 - [x] 增加字符串内存策略文档：固定缓冲区优先，动态字符串必须配套 free。
 - [ ] 增加 Android ABI 构建产物命名规范：`libmalody_catch_core_ffi.so`。
-- [ ] 增加导出符号检查脚本或测试。
+- [x] 增加导出符号检查脚本或测试。
 
 ## P4 - 构建与仓库治理
 
