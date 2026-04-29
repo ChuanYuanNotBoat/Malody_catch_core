@@ -17,6 +17,14 @@ add_library(malody_catch_core_pure STATIC
 target_include_directories(malody_catch_core_pure PUBLIC include)
 target_compile_features(malody_catch_core_pure PUBLIC cxx_std_17)
 
+add_library(malody_catch_core_ffi SHARED
+    src/core/ffi.cpp
+)
+
+target_link_libraries(malody_catch_core_ffi PRIVATE malody_catch_core_pure)
+target_include_directories(malody_catch_core_ffi PUBLIC include)
+target_compile_definitions(malody_catch_core_ffi PRIVATE MCE_BUILD_SHARED)
+
 add_library(MalodyCatchCore STATIC
     src/model/Note.cpp
     src/model/BpmEntry.cpp
@@ -46,6 +54,11 @@ if(BUILD_TESTING)
     )
     target_link_libraries(malody_catch_core_editor_session_tests PRIVATE malody_catch_core_pure)
 
+    add_executable(malody_catch_core_ffi_tests
+        tests/ffi_tests.cpp
+    )
+    target_link_libraries(malody_catch_core_ffi_tests PRIVATE malody_catch_core_ffi)
+
     add_executable(MalodyCatchCoreTests
         tests/minimal_tests.cpp
     )
@@ -53,6 +66,7 @@ if(BUILD_TESTING)
 
     add_test(NAME pure_core_model_tests COMMAND malody_catch_core_model_tests)
     add_test(NAME pure_core_editor_session_tests COMMAND malody_catch_core_editor_session_tests)
+    add_test(NAME pure_core_ffi_tests COMMAND malody_catch_core_ffi_tests)
     add_test(NAME core_minimal_tests COMMAND MalodyCatchCoreTests)
     if(WIN32)
         set_tests_properties(core_minimal_tests PROPERTIES
