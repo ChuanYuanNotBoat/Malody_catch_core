@@ -78,6 +78,28 @@ const char *mce_session_last_error(const mce_session *session)
     return session->impl.lastError().c_str();
 }
 
+int32_t mce_session_copy_last_error(const mce_session *session,
+                                    char *out_error,
+                                    int32_t out_capacity)
+{
+    if (!out_error || out_capacity <= 0)
+        return 0;
+
+    const char *message = mce_session_last_error(session);
+    if (!message)
+    {
+        out_error[0] = '\0';
+        return 0;
+    }
+
+    const int32_t full_len = static_cast<int32_t>(std::strlen(message));
+    const int32_t copy_len = std::min<int32_t>(full_len, out_capacity - 1);
+    if (copy_len > 0)
+        std::memcpy(out_error, message, static_cast<std::size_t>(copy_len));
+    out_error[copy_len] = '\0';
+    return copy_len;
+}
+
 const char *mce_core_version(void)
 {
     return "0.2.0";

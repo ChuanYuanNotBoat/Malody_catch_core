@@ -50,7 +50,7 @@
 - [x] 为 snapshot 增加 chart revision，移动端可判断缓存是否失效。
 - [x] 增加 note snapshot 批量读取，避免 Flutter 逐条 FFI 调用过多。
 - [x] 增加 chart summary snapshot：note count、BPM count、meta summary。
-- [ ] 增加字符串内存策略文档：固定缓冲区优先，动态字符串必须配套 free。
+- [x] 增加字符串内存策略文档：固定缓冲区优先，动态字符串必须配套 free。
 - [ ] 增加 Android ABI 构建产物命名规范：`libmalody_catch_core_ffi.so`。
 - [ ] 增加导出符号检查脚本或测试。
 

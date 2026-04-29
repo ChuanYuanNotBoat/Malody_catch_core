@@ -60,6 +60,35 @@ bool testVersionAndAbi()
            abi >= 1;
 }
 
+bool testCopyLastError()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    // Trigger an error first.
+    const bool triggered = mce_session_add_normal_note(session, "bad", mce_beat{1, 0, 1}, 999) == 0;
+    if (!triggered)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    char buf[256]{};
+    const int32_t copied = mce_session_copy_last_error(session, buf, static_cast<int32_t>(sizeof(buf)));
+    const bool copiedOk = copied > 0 && std::strlen(buf) > 0;
+
+    char tiny[5]{};
+    const int32_t copiedTiny = mce_session_copy_last_error(session, tiny, static_cast<int32_t>(sizeof(tiny)));
+    const bool truncatedOk = copiedTiny == 4 && tiny[4] == '\0';
+
+    const bool invalidOut = mce_session_copy_last_error(session, nullptr, 16) == 0 &&
+                            mce_session_copy_last_error(session, buf, 0) == 0;
+
+    mce_session_destroy(session);
+    return copiedOk && truncatedOk && invalidOut;
+}
+
 bool testBatchSnapshots()
 {
     mce_session *session = mce_session_create();
@@ -240,6 +269,7 @@ int main()
         {"Create add snapshot undo", &testCreateAddSnapshotUndo},
         {"Invalid add reports error", &testInvalidAddReportsError},
         {"Version and ABI", &testVersionAndAbi},
+        {"Copy last error", &testCopyLastError},
         {"Batch snapshots", &testBatchSnapshots},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},

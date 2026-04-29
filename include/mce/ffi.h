@@ -50,6 +50,9 @@ typedef struct mce_chart_summary
 MCE_API mce_session *mce_session_create(void);
 MCE_API void mce_session_destroy(mce_session *session);
 MCE_API const char *mce_session_last_error(const mce_session *session);
+MCE_API int32_t mce_session_copy_last_error(const mce_session *session,
+                                            char *out_error,
+                                            int32_t out_capacity);
 MCE_API const char *mce_core_version(void);
 MCE_API int32_t mce_ffi_abi_version(void);
 
