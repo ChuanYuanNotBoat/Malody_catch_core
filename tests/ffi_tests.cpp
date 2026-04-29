@@ -62,7 +62,7 @@ bool testVersionAndAbi()
     const int32_t abi = mce_ffi_abi_version();
     return version != nullptr &&
            std::strlen(version) > 0 &&
-           abi >= 1;
+           abi >= 3;
 }
 
 bool testCopyLastError()
@@ -178,6 +178,109 @@ bool testBatchSnapshots()
                     std::strcmp(out[1].id, "n3") == 0;
     mce_session_destroy(session);
     return ok;
+}
+
+bool testBpmApisAndUndo()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const int32_t initialCount = mce_session_bpm_count(session);
+    const bool addOk = initialCount >= 1 &&
+                       mce_session_add_bpm(session, mce_beat{8, 0, 1}, 180.0) == 1 &&
+                       mce_session_bpm_count(session) == initialCount + 1;
+    if (!addOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_bpm_snapshot added{};
+    const bool snapshotOk = mce_session_get_bpm_snapshot(session, initialCount, &added) == 1 &&
+                            added.beat.measure == 8 &&
+                            added.bpm == 180.0;
+    if (!snapshotOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const bool updateOk = mce_session_update_bpm(session, initialCount, mce_beat{9, 0, 1}, 200.0) == 1;
+    if (!updateOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_bpm_snapshot updated{};
+    const bool updatedOk = mce_session_get_bpm_snapshot(session, initialCount, &updated) == 1 &&
+                           updated.beat.measure == 9 &&
+                           updated.bpm == 200.0;
+    if (!updatedOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const bool removeOk = mce_session_remove_bpm(session, initialCount) == 1 &&
+                          mce_session_bpm_count(session) == initialCount;
+    const bool undoOk = removeOk &&
+                        mce_session_undo(session) == 1 &&
+                        mce_session_bpm_count(session) == initialCount + 1;
+
+    mce_session_destroy(session);
+    return undoOk;
+}
+
+bool testMetadataApisAndValidation()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    mce_metadata_snapshot meta{};
+    const bool getOk = mce_session_get_metadata(session, &meta) == 1;
+    if (!getOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    std::snprintf(meta.title, sizeof(meta.title), "My Title");
+    std::snprintf(meta.artist, sizeof(meta.artist), "My Artist");
+    std::snprintf(meta.difficulty, sizeof(meta.difficulty), "Hard");
+    std::snprintf(meta.audio_file, sizeof(meta.audio_file), "song.ogg");
+    meta.speed = 2;
+    meta.first_bpm = 128.0;
+    meta.offset_ms = 15;
+    meta.preview_time_ms = 40000;
+
+    const bool setOk = mce_session_set_metadata(session, &meta) == 1;
+    if (!setOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_metadata_snapshot check{};
+    const bool checkOk = mce_session_get_metadata(session, &check) == 1 &&
+                         std::strcmp(check.title, "My Title") == 0 &&
+                         std::strcmp(check.artist, "My Artist") == 0 &&
+                         std::strcmp(check.audio_file, "song.ogg") == 0;
+    if (!checkOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_metadata_snapshot bad = check;
+    bad.audio_file[0] = '\0';
+    const bool invalidRejected = mce_session_set_metadata(session, &bad) == 0 &&
+                                 mce_session_last_error_code(session) == MCE_ERROR_VALIDATION_FAILED;
+
+    mce_session_destroy(session);
+    return invalidRejected;
 }
 
 bool testChartSummarySnapshot()
@@ -338,6 +441,9 @@ bool testExportedSymbols()
         "mce_session_create",
         "mce_session_last_error_code",
         "mce_error_code_name",
+        "mce_session_bpm_count",
+        "mce_session_get_bpm_snapshot",
+        "mce_session_set_metadata",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -360,6 +466,9 @@ bool testExportedSymbols()
         "mce_session_create",
         "mce_session_last_error_code",
         "mce_error_code_name",
+        "mce_session_bpm_count",
+        "mce_session_get_bpm_snapshot",
+        "mce_session_set_metadata",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -396,6 +505,8 @@ int main()
         {"Stable error code", &testStableErrorCode},
         {"Auto id generation for create APIs", &testAutoIdGenerationForCreateApis},
         {"Batch snapshots", &testBatchSnapshots},
+        {"BPM APIs and undo", &testBpmApisAndUndo},
+        {"Metadata APIs and validation", &testMetadataApisAndValidation},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},

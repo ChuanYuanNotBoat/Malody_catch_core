@@ -47,6 +47,28 @@ typedef struct mce_chart_summary
     char difficulty[64];
 } mce_chart_summary;
 
+typedef struct mce_bpm_snapshot
+{
+    mce_beat beat;
+    double bpm;
+} mce_bpm_snapshot;
+
+typedef struct mce_metadata_snapshot
+{
+    char title[128];
+    char title_original[128];
+    char artist[128];
+    char artist_original[128];
+    char difficulty[64];
+    char chart_author[128];
+    char audio_file[260];
+    char background_file[260];
+    int32_t preview_time_ms;
+    double first_bpm;
+    int32_t offset_ms;
+    int32_t speed;
+} mce_metadata_snapshot;
+
 typedef enum mce_error_code
 {
     MCE_ERROR_NONE = 0,
@@ -80,6 +102,20 @@ MCE_API int32_t mce_session_get_note_snapshots(const mce_session *session,
                                                mce_note_snapshot *out_notes);
 MCE_API int32_t mce_session_get_chart_summary(const mce_session *session,
                                               mce_chart_summary *out_summary);
+MCE_API int32_t mce_session_bpm_count(const mce_session *session);
+MCE_API int32_t mce_session_get_bpm_snapshot(const mce_session *session,
+                                             int32_t index,
+                                             mce_bpm_snapshot *out_bpm);
+MCE_API int32_t mce_session_get_metadata(const mce_session *session,
+                                         mce_metadata_snapshot *out_metadata);
+MCE_API int32_t mce_session_set_metadata(mce_session *session,
+                                         const mce_metadata_snapshot *metadata);
+MCE_API int32_t mce_session_add_bpm(mce_session *session, mce_beat beat, double bpm);
+MCE_API int32_t mce_session_update_bpm(mce_session *session,
+                                       int32_t index,
+                                       mce_beat beat,
+                                       double bpm);
+MCE_API int32_t mce_session_remove_bpm(mce_session *session, int32_t index);
 
 MCE_API int32_t mce_session_add_normal_note(mce_session *session,
                                             const char *id,
