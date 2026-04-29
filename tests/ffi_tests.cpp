@@ -123,6 +123,39 @@ bool testStableErrorCode()
     return firstOk && badAdd && badIndex && badArg && missing && nameOk;
 }
 
+bool testAutoIdGenerationForCreateApis()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool created = mce_session_add_normal_note(session, "", mce_beat{1, 0, 1}, 100) == 1 &&
+                         mce_session_add_rain_note(session, nullptr, mce_beat{2, 0, 1}, mce_beat{3, 0, 1}, 120) == 1 &&
+                         mce_session_add_sound_note(session, "", mce_beat{4, 0, 1}, "tap.wav", 70, 0) == 1;
+    if (!created)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot n0{};
+    mce_note_snapshot n1{};
+    mce_note_snapshot n2{};
+    const bool okSnapshots = mce_session_get_note_snapshot(session, 0, &n0) == 1 &&
+                             mce_session_get_note_snapshot(session, 1, &n1) == 1 &&
+                             mce_session_get_note_snapshot(session, 2, &n2) == 1;
+    const bool idsOk = okSnapshots &&
+                       std::strlen(n0.id) > 0 &&
+                       std::strlen(n1.id) > 0 &&
+                       std::strlen(n2.id) > 0 &&
+                       std::strcmp(n0.id, n1.id) != 0 &&
+                       std::strcmp(n1.id, n2.id) != 0 &&
+                       std::strcmp(n0.id, n2.id) != 0;
+
+    mce_session_destroy(session);
+    return idsOk;
+}
+
 bool testBatchSnapshots()
 {
     mce_session *session = mce_session_create();
@@ -361,6 +394,7 @@ int main()
         {"Version and ABI", &testVersionAndAbi},
         {"Copy last error", &testCopyLastError},
         {"Stable error code", &testStableErrorCode},
+        {"Auto id generation for create APIs", &testAutoIdGenerationForCreateApis},
         {"Batch snapshots", &testBatchSnapshots},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},

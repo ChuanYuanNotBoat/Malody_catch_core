@@ -5,6 +5,7 @@
 - [x] Added stable FFI error-code API: `mce_session_last_error_code` and `mce_error_code_name`.
 - [x] Added per-call error-code updates for note/snapshot/edit/undo-redo paths.
 - [x] Added tests for stable error-code semantics and exported symbols.
+- [x] Added core-side auto ID generation for empty create-note IDs (normal/rain/sound).
 
 更新日期：2026-04-29
 

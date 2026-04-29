@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstring>
 #include <new>
+#include <string>
 
 struct mce_session
 {
@@ -80,6 +81,36 @@ const char *errorCodeName(int32_t code)
         return "operation_failed";
     default:
         return "unknown";
+    }
+}
+
+bool noteIdExists(const mce_session *session, const std::string &id)
+{
+    if (!session || id.empty())
+        return false;
+    const auto &notes = session->impl.chart().notes;
+    for (const auto &note : notes)
+    {
+        if (note.id == id)
+            return true;
+    }
+    return false;
+}
+
+std::string normalizeCreateId(const mce_session *session, const char *id)
+{
+    const std::string input = id ? id : "";
+    if (!input.empty())
+        return input;
+
+    const auto &notes = session->impl.chart().notes;
+    std::size_t seq = notes.size() + 1;
+    while (true)
+    {
+        const std::string candidate = "mce-auto-" + std::to_string(seq);
+        if (!noteIdExists(session, candidate))
+            return candidate;
+        ++seq;
     }
 }
 
@@ -270,7 +301,7 @@ int32_t mce_session_add_normal_note(mce_session *session,
     }
 
     mce::Note note;
-    note.id = id ? id : "";
+    note.id = normalizeCreateId(session, id);
     note.type = mce::NoteType::Normal;
     note.beat = toCoreBeat(beat);
     note.endBeat = note.beat;
@@ -296,7 +327,7 @@ int32_t mce_session_add_rain_note(mce_session *session,
     }
 
     mce::Note note;
-    note.id = id ? id : "";
+    note.id = normalizeCreateId(session, id);
     note.type = mce::NoteType::Rain;
     note.beat = toCoreBeat(beat);
     note.endBeat = toCoreBeat(end_beat);
@@ -347,7 +378,7 @@ int32_t mce_session_add_sound_note(mce_session *session,
     }
 
     mce::Note note;
-    note.id = id ? id : "";
+    note.id = normalizeCreateId(session, id);
     note.type = mce::NoteType::Sound;
     note.beat = toCoreBeat(beat);
     note.endBeat = note.beat;
