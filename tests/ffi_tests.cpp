@@ -94,6 +94,35 @@ bool testCopyLastError()
     return copiedOk && truncatedOk && invalidOut;
 }
 
+bool testStableErrorCode()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool firstOk = mce_session_add_normal_note(session, "ok-a", mce_beat{1, 0, 1}, 100) == 1 &&
+                         mce_session_last_error_code(session) == MCE_ERROR_NONE;
+
+    const bool badAdd = mce_session_add_normal_note(session, "bad-a", mce_beat{1, 0, 1}, 999) == 0 &&
+                        mce_session_last_error_code(session) == MCE_ERROR_VALIDATION_FAILED;
+
+    mce_note_snapshot note{};
+    const bool badIndex = mce_session_get_note_snapshot(session, 99, &note) == 0 &&
+                          mce_session_last_error_code(session) == MCE_ERROR_OUT_OF_RANGE;
+
+    const bool badArg = mce_session_remove_note_by_id(session, nullptr) == 0 &&
+                        mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT;
+
+    const bool missing = mce_session_remove_note_by_id(session, "not-exists") == 0 &&
+                         mce_session_last_error_code(session) == MCE_ERROR_NOT_FOUND;
+
+    const bool nameOk = std::strcmp(mce_error_code_name(MCE_ERROR_NOT_FOUND), "not_found") == 0 &&
+                        std::strcmp(mce_error_code_name(12345), "unknown") == 0;
+
+    mce_session_destroy(session);
+    return firstOk && badAdd && badIndex && badArg && missing && nameOk;
+}
+
 bool testBatchSnapshots()
 {
     mce_session *session = mce_session_create();
@@ -274,6 +303,8 @@ bool testExportedSymbols()
         "mce_core_version",
         "mce_ffi_abi_version",
         "mce_session_create",
+        "mce_session_last_error_code",
+        "mce_error_code_name",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -294,6 +325,8 @@ bool testExportedSymbols()
         "mce_core_version",
         "mce_ffi_abi_version",
         "mce_session_create",
+        "mce_session_last_error_code",
+        "mce_error_code_name",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -327,6 +360,7 @@ int main()
         {"Invalid add reports error", &testInvalidAddReportsError},
         {"Version and ABI", &testVersionAndAbi},
         {"Copy last error", &testCopyLastError},
+        {"Stable error code", &testStableErrorCode},
         {"Batch snapshots", &testBatchSnapshots},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},

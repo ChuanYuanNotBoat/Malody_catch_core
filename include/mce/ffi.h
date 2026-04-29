@@ -47,9 +47,22 @@ typedef struct mce_chart_summary
     char difficulty[64];
 } mce_chart_summary;
 
+typedef enum mce_error_code
+{
+    MCE_ERROR_NONE = 0,
+    MCE_ERROR_INVALID_SESSION = 1,
+    MCE_ERROR_INVALID_ARGUMENT = 2,
+    MCE_ERROR_OUT_OF_RANGE = 3,
+    MCE_ERROR_VALIDATION_FAILED = 4,
+    MCE_ERROR_NOT_FOUND = 5,
+    MCE_ERROR_OPERATION_FAILED = 6
+} mce_error_code;
+
 MCE_API mce_session *mce_session_create(void);
 MCE_API void mce_session_destroy(mce_session *session);
 MCE_API const char *mce_session_last_error(const mce_session *session);
+MCE_API int32_t mce_session_last_error_code(const mce_session *session);
+MCE_API const char *mce_error_code_name(int32_t code);
 MCE_API int32_t mce_session_copy_last_error(const mce_session *session,
                                             char *out_error,
                                             int32_t out_capacity);
