@@ -45,6 +45,6 @@ ctest --test-dir build -C Release --output-on-failure
 The repository now has two build tracks:
 
 - `malody_catch_core_pure`: pure C++ model foundation under `include/mce` and
-  `src/core`.
+  `src/core`, including the initial `mce::EditorSession` edit/undo facade.
 - `MalodyCatchCore`: transitional Qt-backed implementation kept alive so
   behavior can be migrated incrementally without breaking existing tests.

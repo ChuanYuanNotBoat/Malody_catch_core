@@ -10,6 +10,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui)
 
 add_library(malody_catch_core_pure STATIC
+    src/core/editor_session.cpp
     src/core/model.cpp
 )
 
@@ -40,12 +41,18 @@ if(BUILD_TESTING)
     )
     target_link_libraries(malody_catch_core_model_tests PRIVATE malody_catch_core_pure)
 
+    add_executable(malody_catch_core_editor_session_tests
+        tests/editor_session_tests.cpp
+    )
+    target_link_libraries(malody_catch_core_editor_session_tests PRIVATE malody_catch_core_pure)
+
     add_executable(MalodyCatchCoreTests
         tests/minimal_tests.cpp
     )
     target_link_libraries(MalodyCatchCoreTests PRIVATE MalodyCatchCore)
 
     add_test(NAME pure_core_model_tests COMMAND malody_catch_core_model_tests)
+    add_test(NAME pure_core_editor_session_tests COMMAND malody_catch_core_editor_session_tests)
     add_test(NAME core_minimal_tests COMMAND MalodyCatchCoreTests)
     if(WIN32)
         set_tests_properties(core_minimal_tests PROPERTIES
