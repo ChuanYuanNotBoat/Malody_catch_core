@@ -69,6 +69,19 @@ typedef struct mce_metadata_snapshot
     int32_t speed;
 } mce_metadata_snapshot;
 
+typedef enum mce_note_batch_op_type
+{
+    MCE_NOTE_BATCH_OP_ADD = 1,
+    MCE_NOTE_BATCH_OP_MOVE = 2,
+    MCE_NOTE_BATCH_OP_REMOVE = 3
+} mce_note_batch_op_type;
+
+typedef struct mce_note_batch_op
+{
+    int32_t op_type;
+    mce_note_snapshot note;
+} mce_note_batch_op;
+
 typedef enum mce_error_code
 {
     MCE_ERROR_NONE = 0,
@@ -137,6 +150,9 @@ MCE_API int32_t mce_session_add_sound_note(mce_session *session,
                                            const char *sound,
                                            int32_t volume,
                                            int32_t offset_ms);
+MCE_API int32_t mce_session_apply_note_batch(mce_session *session,
+                                             const mce_note_batch_op *ops,
+                                             int32_t op_count);
 MCE_API int32_t mce_session_remove_note_by_id(mce_session *session, const char *id);
 MCE_API int32_t mce_session_can_undo(const mce_session *session);
 MCE_API int32_t mce_session_can_redo(const mce_session *session);

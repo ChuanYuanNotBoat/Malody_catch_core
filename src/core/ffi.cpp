@@ -98,6 +98,18 @@ bool noteIdExists(const mce_session *session, const std::string &id)
     return false;
 }
 
+bool noteIdExistsInChart(const mce::Chart &chart, const std::string &id)
+{
+    if (id.empty())
+        return false;
+    for (const auto &note : chart.notes)
+    {
+        if (note.id == id)
+            return true;
+    }
+    return false;
+}
+
 std::string normalizeCreateId(const mce_session *session, const char *id)
 {
     const std::string input = id ? id : "";
@@ -115,9 +127,39 @@ std::string normalizeCreateId(const mce_session *session, const char *id)
     }
 }
 
+std::string normalizeCreateIdInChart(const mce::Chart &chart, const char *id)
+{
+    const std::string input = id ? id : "";
+    if (!input.empty())
+        return input;
+
+    std::size_t seq = chart.notes.size() + 1;
+    while (true)
+    {
+        const std::string candidate = "mce-auto-" + std::to_string(seq);
+        if (!noteIdExistsInChart(chart, candidate))
+            return candidate;
+        ++seq;
+    }
+}
+
 std::string fromCString(const char *src)
 {
     return src ? std::string(src) : std::string{};
+}
+
+mce::Note noteFromSnapshot(const mce_note_snapshot &snapshot)
+{
+    mce::Note note;
+    note.id = fromCString(snapshot.id);
+    note.type = mce::noteTypeFromInt(snapshot.type);
+    note.beat = toCoreBeat(snapshot.beat);
+    note.endBeat = toCoreBeat(snapshot.end_beat);
+    note.x = snapshot.x;
+    note.sound = fromCString(snapshot.sound);
+    note.volume = snapshot.volume;
+    note.offsetMs = snapshot.offset_ms;
+    return note;
 }
 
 void fillBpmSnapshot(const mce::BpmEntry &bpm, mce_bpm_snapshot *out_bpm)
@@ -240,12 +282,12 @@ int32_t mce_session_copy_last_error(const mce_session *session,
 
 const char *mce_core_version(void)
 {
-    return "0.4.0";
+    return "0.5.0";
 }
 
 int32_t mce_ffi_abi_version(void)
 {
-    return 3;
+    return 4;
 }
 
 int32_t mce_session_note_count(const mce_session *session)
@@ -595,6 +637,88 @@ int32_t mce_session_add_sound_note(mce_session *session,
     const bool added = session->impl.chart().notes.size() == before + 1;
     setLastErrorCode(session, added ? MCE_ERROR_NONE : MCE_ERROR_VALIDATION_FAILED);
     return ok(added);
+}
+
+int32_t mce_session_apply_note_batch(mce_session *session,
+                                     const mce_note_batch_op *ops,
+                                     int32_t op_count)
+{
+    if (!session)
+    {
+        setLastErrorCode(session, MCE_ERROR_INVALID_SESSION);
+        return 0;
+    }
+    if (!ops || op_count <= 0)
+    {
+        setLastErrorCode(session, MCE_ERROR_INVALID_ARGUMENT);
+        return 0;
+    }
+
+    mce::Chart next = session->impl.chart();
+    for (int32_t i = 0; i < op_count; ++i)
+    {
+        const mce_note_batch_op &op = ops[i];
+        if (op.op_type == MCE_NOTE_BATCH_OP_ADD)
+        {
+            mce::Note note = noteFromSnapshot(op.note);
+            note.id = normalizeCreateIdInChart(next, op.note.id);
+            if (!note.isValid())
+            {
+                setLastErrorCode(session, MCE_ERROR_VALIDATION_FAILED);
+                return 0;
+            }
+            next.addNote(note);
+            continue;
+        }
+
+        const std::string id = fromCString(op.note.id);
+        if (id.empty())
+        {
+            setLastErrorCode(session, MCE_ERROR_INVALID_ARGUMENT);
+            return 0;
+        }
+
+        if (op.op_type == MCE_NOTE_BATCH_OP_REMOVE)
+        {
+            if (!next.removeNoteById(id))
+            {
+                setLastErrorCode(session, MCE_ERROR_NOT_FOUND);
+                return 0;
+            }
+            continue;
+        }
+
+        if (op.op_type == MCE_NOTE_BATCH_OP_MOVE)
+        {
+            mce::Note replacement = noteFromSnapshot(op.note);
+            replacement.id = id;
+            if (!replacement.isValid())
+            {
+                setLastErrorCode(session, MCE_ERROR_VALIDATION_FAILED);
+                return 0;
+            }
+
+            auto it = std::find_if(next.notes.begin(), next.notes.end(), [&](const mce::Note &note) {
+                return note.id == id;
+            });
+            if (it == next.notes.end())
+            {
+                setLastErrorCode(session, MCE_ERROR_NOT_FOUND);
+                return 0;
+            }
+
+            *it = replacement;
+            next.sortNotes();
+            continue;
+        }
+
+        setLastErrorCode(session, MCE_ERROR_INVALID_ARGUMENT);
+        return 0;
+    }
+
+    session->impl.replaceChart(next, "Batch Note Edit");
+    setLastErrorCode(session, MCE_ERROR_NONE);
+    return 1;
 }
 
 int32_t mce_session_remove_note_by_id(mce_session *session, const char *id)

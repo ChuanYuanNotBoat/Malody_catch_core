@@ -62,7 +62,7 @@ bool testVersionAndAbi()
     const int32_t abi = mce_ffi_abi_version();
     return version != nullptr &&
            std::strlen(version) > 0 &&
-           abi >= 3;
+           abi >= 4;
 }
 
 bool testCopyLastError()
@@ -283,6 +283,94 @@ bool testMetadataApisAndValidation()
     return invalidRejected;
 }
 
+bool testApplyNoteBatchSingleUndoStep()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool seedOk = mce_session_add_normal_note(session, "batch-a", mce_beat{1, 0, 1}, 100) == 1 &&
+                        mce_session_add_normal_note(session, "batch-b", mce_beat{2, 0, 1}, 200) == 1;
+    if (!seedOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_batch_op ops[3]{};
+    ops[0].op_type = MCE_NOTE_BATCH_OP_MOVE;
+    std::snprintf(ops[0].note.id, sizeof(ops[0].note.id), "batch-a");
+    ops[0].note.type = 0;
+    ops[0].note.beat = mce_beat{3, 0, 1};
+    ops[0].note.end_beat = ops[0].note.beat;
+    ops[0].note.x = 300;
+
+    ops[1].op_type = MCE_NOTE_BATCH_OP_REMOVE;
+    std::snprintf(ops[1].note.id, sizeof(ops[1].note.id), "batch-b");
+
+    ops[2].op_type = MCE_NOTE_BATCH_OP_ADD;
+    ops[2].note.type = 1;
+    ops[2].note.beat = mce_beat{4, 0, 1};
+    ops[2].note.end_beat = ops[2].note.beat;
+    std::snprintf(ops[2].note.sound, sizeof(ops[2].note.sound), "batch.wav");
+    ops[2].note.volume = 88;
+    ops[2].note.offset_ms = -5;
+
+    const uint64_t revBefore = mce_session_chart_revision(session);
+    const bool applied = mce_session_apply_note_batch(session, ops, 3) == 1 &&
+                         mce_session_last_error_code(session) == MCE_ERROR_NONE &&
+                         mce_session_note_count(session) == 2 &&
+                         mce_session_chart_revision(session) > revBefore;
+    if (!applied)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot notes[4]{};
+    const int32_t copied = mce_session_get_note_snapshots(session, 0, 4, notes);
+    bool movedFound = false;
+    bool removedGone = true;
+    bool soundAdded = false;
+    for (int32_t i = 0; i < copied; ++i)
+    {
+        if (std::strcmp(notes[i].id, "batch-a") == 0)
+            movedFound = (notes[i].x == 300 && notes[i].beat.measure == 3);
+        if (std::strcmp(notes[i].id, "batch-b") == 0)
+            removedGone = false;
+        if (notes[i].type == 1 && std::strcmp(notes[i].sound, "batch.wav") == 0)
+            soundAdded = true;
+    }
+    if (!(movedFound && removedGone && soundAdded))
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const bool undoOk = mce_session_undo(session) == 1 &&
+                        mce_session_note_count(session) == 2;
+    if (!undoOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot restored[4]{};
+    const int32_t restoredCount = mce_session_get_note_snapshots(session, 0, 4, restored);
+    bool oldAMovedBack = false;
+    bool oldBRestored = false;
+    for (int32_t i = 0; i < restoredCount; ++i)
+    {
+        if (std::strcmp(restored[i].id, "batch-a") == 0)
+            oldAMovedBack = (restored[i].x == 100 && restored[i].beat.measure == 1);
+        if (std::strcmp(restored[i].id, "batch-b") == 0)
+            oldBRestored = true;
+    }
+
+    mce_session_destroy(session);
+    return oldAMovedBack && oldBRestored;
+}
+
 bool testChartSummarySnapshot()
 {
     mce_session *session = mce_session_create();
@@ -444,6 +532,7 @@ bool testExportedSymbols()
         "mce_session_bpm_count",
         "mce_session_get_bpm_snapshot",
         "mce_session_set_metadata",
+        "mce_session_apply_note_batch",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -469,6 +558,7 @@ bool testExportedSymbols()
         "mce_session_bpm_count",
         "mce_session_get_bpm_snapshot",
         "mce_session_set_metadata",
+        "mce_session_apply_note_batch",
         "mce_session_copy_last_error",
         "mce_session_get_note_snapshots",
         "mce_session_get_chart_summary",
@@ -507,6 +597,7 @@ int main()
         {"Batch snapshots", &testBatchSnapshots},
         {"BPM APIs and undo", &testBpmApisAndUndo},
         {"Metadata APIs and validation", &testMetadataApisAndValidation},
+        {"Apply note batch single undo step", &testApplyNoteBatchSingleUndoStep},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},
