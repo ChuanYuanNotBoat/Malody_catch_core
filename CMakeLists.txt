@@ -9,6 +9,13 @@ set(CMAKE_AUTOMOC ON)
 # The migration target is a pure C++ library with no Qt dependency.
 find_package(Qt6 REQUIRED COMPONENTS Core Gui)
 
+add_library(malody_catch_core_pure STATIC
+    src/core/model.cpp
+)
+
+target_include_directories(malody_catch_core_pure PUBLIC include)
+target_compile_features(malody_catch_core_pure PUBLIC cxx_std_17)
+
 add_library(MalodyCatchCore STATIC
     src/model/Note.cpp
     src/model/BpmEntry.cpp
@@ -28,11 +35,17 @@ target_link_libraries(MalodyCatchCore PUBLIC Qt6::Core Qt6::Gui)
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(malody_catch_core_model_tests
+        tests/core_model_tests.cpp
+    )
+    target_link_libraries(malody_catch_core_model_tests PRIVATE malody_catch_core_pure)
+
     add_executable(MalodyCatchCoreTests
         tests/minimal_tests.cpp
     )
     target_link_libraries(MalodyCatchCoreTests PRIVATE MalodyCatchCore)
 
+    add_test(NAME pure_core_model_tests COMMAND malody_catch_core_model_tests)
     add_test(NAME core_minimal_tests COMMAND MalodyCatchCoreTests)
     if(WIN32)
         set_tests_properties(core_minimal_tests PROPERTIES

@@ -16,6 +16,8 @@ a C ABI layer for Flutter `dart:ffi`.
 
 ## Current Layout
 
+- `include/mce`: new pure C++ public core API.
+- `src/core`: new pure C++ implementation.
 - `src/model`: chart, note, BPM, and metadata types.
 - `src/controller`: current editing controller, to be replaced by
   `mce::EditorSession`.
@@ -37,3 +39,12 @@ ctest --test-dir build -C Release --output-on-failure
 - Replace Qt JSON/file/process helpers with portable core dependencies.
 - Replace `QUndoStack` with a core-owned command stack.
 - Add stable C ABI functions for mobile FFI.
+
+## Current Migration State
+
+The repository now has two build tracks:
+
+- `malody_catch_core_pure`: pure C++ model foundation under `include/mce` and
+  `src/core`.
+- `MalodyCatchCore`: transitional Qt-backed implementation kept alive so
+  behavior can be migrated incrementally without breaking existing tests.
