@@ -15,8 +15,8 @@
 - [x] 建立纯 C++ `mce::Note` / `mce::Chart` / `mce::MetaData` / `mce::BpmEntry`。
 - [x] 建立纯 C++ `mce::EditorSession`。
 - [x] 建立最小 C ABI：session、普通音符 add/remove、snapshot、undo/redo。
-- [ ] 增加 rain note FFI：添加、移动、校验、snapshot。
-- [ ] 增加 sound note FFI：添加、校验、snapshot。
+- [x] 增加 rain note FFI：添加、移动、校验、snapshot。
+- [x] 增加 sound note FFI：添加、校验、snapshot。
 - [ ] 增加批量编辑 API：一次提交 add/remove/move，作为单个 undo step。
 - [ ] 增加 BPM 编辑 API：add/update/remove BPM。
 - [ ] 增加 metadata 读写 API。

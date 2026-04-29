@@ -47,6 +47,121 @@ bool testInvalidAddReportsError()
     mce_session_destroy(session);
     return ok;
 }
+
+bool testRainAddMoveAndSnapshot()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool created = mce_session_add_rain_note(
+                             session,
+                             "rain-a",
+                             mce_beat{3, 0, 1},
+                             mce_beat{4, 0, 1},
+                             192) == 1;
+    if (!created)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot before{};
+    const bool snapshotBefore = mce_session_get_note_snapshot(session, 0, &before) == 1;
+    if (!snapshotBefore || before.type != 3 || before.end_beat.measure != 4)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const bool moved = mce_session_move_rain_note(
+                           session,
+                           "rain-a",
+                           mce_beat{5, 0, 1},
+                           mce_beat{6, 0, 1},
+                           300) == 1;
+    if (!moved)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot after{};
+    const bool snapshotAfter = mce_session_get_note_snapshot(session, 0, &after) == 1;
+    const bool ok = snapshotAfter &&
+                    after.type == 3 &&
+                    after.beat.measure == 5 &&
+                    after.end_beat.measure == 6 &&
+                    after.x == 300;
+
+    mce_session_destroy(session);
+    return ok;
+}
+
+bool testRainValidationReportsError()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool ok = mce_session_add_rain_note(
+                        session,
+                        "rain-bad",
+                        mce_beat{3, 0, 1},
+                        mce_beat{2, 0, 1},
+                        256) == 0 &&
+                    mce_session_note_count(session) == 0 &&
+                    std::strlen(mce_session_last_error(session)) > 0;
+
+    mce_session_destroy(session);
+    return ok;
+}
+
+bool testSoundAddSnapshotAndValidation()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool created = mce_session_add_sound_note(
+                             session,
+                             "sound-a",
+                             mce_beat{7, 1, 4},
+                             "clap.wav",
+                             80,
+                             -15) == 1;
+    if (!created)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot note{};
+    const bool snapshot = mce_session_get_note_snapshot(session, 0, &note) == 1;
+    const bool fieldsOk = snapshot &&
+                          note.type == 1 &&
+                          std::strcmp(note.id, "sound-a") == 0 &&
+                          std::strcmp(note.sound, "clap.wav") == 0 &&
+                          note.volume == 80 &&
+                          note.offset_ms == -15;
+    if (!fieldsOk)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const bool invalidRejected = mce_session_add_sound_note(
+                                     session,
+                                     "sound-bad",
+                                     mce_beat{8, 0, 1},
+                                     "",
+                                     50,
+                                     0) == 0 &&
+                                 std::strlen(mce_session_last_error(session)) > 0;
+
+    mce_session_destroy(session);
+    return invalidRejected;
+}
 } // namespace
 
 int main()
@@ -60,6 +175,9 @@ int main()
     const Case cases[] = {
         {"Create add snapshot undo", &testCreateAddSnapshotUndo},
         {"Invalid add reports error", &testInvalidAddReportsError},
+        {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
+        {"Rain validation reports error", &testRainValidationReportsError},
+        {"Sound add snapshot and validation", &testSoundAddSnapshotAndValidation},
     };
 
     int failed = 0;

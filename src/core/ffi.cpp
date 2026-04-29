@@ -114,6 +114,71 @@ int32_t mce_session_add_normal_note(mce_session *session,
     return ok(session->impl.chart().notes.size() == before + 1);
 }
 
+int32_t mce_session_add_rain_note(mce_session *session,
+                                  const char *id,
+                                  mce_beat beat,
+                                  mce_beat end_beat,
+                                  int32_t x)
+{
+    if (!session)
+        return 0;
+
+    mce::Note note;
+    note.id = id ? id : "";
+    note.type = mce::NoteType::Rain;
+    note.beat = toCoreBeat(beat);
+    note.endBeat = toCoreBeat(end_beat);
+    note.x = x;
+
+    const std::size_t before = session->impl.chart().notes.size();
+    session->impl.addNote(note);
+    return ok(session->impl.chart().notes.size() == before + 1);
+}
+
+int32_t mce_session_move_rain_note(mce_session *session,
+                                   const char *id,
+                                   mce_beat beat,
+                                   mce_beat end_beat,
+                                   int32_t x)
+{
+    if (!session || !id)
+        return 0;
+
+    mce::Note note;
+    note.id = id;
+    note.type = mce::NoteType::Rain;
+    note.beat = toCoreBeat(beat);
+    note.endBeat = toCoreBeat(end_beat);
+    note.x = x;
+
+    return ok(session->impl.moveNoteById(id, note));
+}
+
+int32_t mce_session_add_sound_note(mce_session *session,
+                                   const char *id,
+                                   mce_beat beat,
+                                   const char *sound,
+                                   int32_t volume,
+                                   int32_t offset_ms)
+{
+    if (!session)
+        return 0;
+
+    mce::Note note;
+    note.id = id ? id : "";
+    note.type = mce::NoteType::Sound;
+    note.beat = toCoreBeat(beat);
+    note.endBeat = note.beat;
+    note.x = -1;
+    note.sound = sound ? sound : "";
+    note.volume = volume;
+    note.offsetMs = offset_ms;
+
+    const std::size_t before = session->impl.chart().notes.size();
+    session->impl.addNote(note);
+    return ok(session->impl.chart().notes.size() == before + 1);
+}
+
 int32_t mce_session_remove_note_by_id(mce_session *session, const char *id)
 {
     if (!session || !id)

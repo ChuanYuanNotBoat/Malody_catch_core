@@ -48,6 +48,22 @@ MCE_API int32_t mce_session_add_normal_note(mce_session *session,
                                             const char *id,
                                             mce_beat beat,
                                             int32_t x);
+MCE_API int32_t mce_session_add_rain_note(mce_session *session,
+                                          const char *id,
+                                          mce_beat beat,
+                                          mce_beat end_beat,
+                                          int32_t x);
+MCE_API int32_t mce_session_move_rain_note(mce_session *session,
+                                           const char *id,
+                                           mce_beat beat,
+                                           mce_beat end_beat,
+                                           int32_t x);
+MCE_API int32_t mce_session_add_sound_note(mce_session *session,
+                                           const char *id,
+                                           mce_beat beat,
+                                           const char *sound,
+                                           int32_t volume,
+                                           int32_t offset_ms);
 MCE_API int32_t mce_session_remove_note_by_id(mce_session *session, const char *id);
 MCE_API int32_t mce_session_can_undo(const mce_session *session);
 MCE_API int32_t mce_session_can_redo(const mce_session *session);
