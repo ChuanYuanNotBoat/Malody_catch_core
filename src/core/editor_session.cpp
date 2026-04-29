@@ -9,6 +9,7 @@ namespace mce
 EditorSession::EditorSession()
 {
     m_chart.clear();
+    m_revision = 1;
 }
 
 const Chart &EditorSession::chart() const
@@ -28,6 +29,7 @@ void EditorSession::replaceChart(const Chart &chart, const std::string &actionNa
     next.sortBpms();
     pushHistory(actionName.empty() ? "Replace Chart" : actionName, m_chart, next);
     m_chart = std::move(next);
+    ++m_revision;
     clearError();
 }
 
@@ -45,6 +47,7 @@ void EditorSession::addNote(Note note)
     next.addNote(note);
     pushHistory("Add Note", m_chart, next);
     m_chart = std::move(next);
+    ++m_revision;
     clearError();
 }
 
@@ -65,6 +68,7 @@ bool EditorSession::removeNoteById(const std::string &id)
 
     pushHistory("Remove Note", m_chart, next);
     m_chart = std::move(next);
+    ++m_revision;
     clearError();
     return true;
 }
@@ -99,6 +103,7 @@ bool EditorSession::moveNoteById(const std::string &id, const Note &replacement)
 
     pushHistory("Move Note", m_chart, next);
     m_chart = std::move(next);
+    ++m_revision;
     clearError();
     return true;
 }
@@ -125,6 +130,7 @@ bool EditorSession::undo()
     m_undoStack.pop_back();
     m_chart = entry.before;
     m_redoStack.push_back(std::move(entry));
+    ++m_revision;
     clearError();
     return true;
 }
@@ -141,6 +147,7 @@ bool EditorSession::redo()
     m_redoStack.pop_back();
     m_chart = entry.after;
     m_undoStack.push_back(std::move(entry));
+    ++m_revision;
     clearError();
     return true;
 }
@@ -153,6 +160,11 @@ std::string EditorSession::nextUndoActionName() const
 std::string EditorSession::nextRedoActionName() const
 {
     return m_redoStack.empty() ? std::string{} : m_redoStack.back().actionName;
+}
+
+std::uint64_t EditorSession::revision() const
+{
+    return m_revision;
 }
 
 const std::string &EditorSession::lastError() const

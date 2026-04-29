@@ -2,6 +2,7 @@
 
 #include "mce/model.hpp"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,7 @@ public:
     bool redo();
     std::string nextUndoActionName() const;
     std::string nextRedoActionName() const;
+    std::uint64_t revision() const;
 
     const std::string &lastError() const;
     void clearHistory();
@@ -47,6 +49,7 @@ private:
     std::vector<HistoryEntry> m_undoStack;
     std::vector<HistoryEntry> m_redoStack;
     std::string m_lastError;
+    std::uint64_t m_revision = 0;
 };
 
 } // namespace mce

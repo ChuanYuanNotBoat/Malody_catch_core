@@ -38,11 +38,18 @@ typedef struct mce_note_snapshot
 MCE_API mce_session *mce_session_create(void);
 MCE_API void mce_session_destroy(mce_session *session);
 MCE_API const char *mce_session_last_error(const mce_session *session);
+MCE_API const char *mce_core_version(void);
+MCE_API int32_t mce_ffi_abi_version(void);
 
 MCE_API int32_t mce_session_note_count(const mce_session *session);
+MCE_API uint64_t mce_session_chart_revision(const mce_session *session);
 MCE_API int32_t mce_session_get_note_snapshot(const mce_session *session,
                                               int32_t index,
                                               mce_note_snapshot *out_note);
+MCE_API int32_t mce_session_get_note_snapshots(const mce_session *session,
+                                               int32_t start_index,
+                                               int32_t max_count,
+                                               mce_note_snapshot *out_notes);
 
 MCE_API int32_t mce_session_add_normal_note(mce_session *session,
                                             const char *id,

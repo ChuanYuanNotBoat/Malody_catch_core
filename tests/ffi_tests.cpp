@@ -11,10 +11,13 @@ bool testCreateAddSnapshotUndo()
     if (!session)
         return false;
 
+    const uint64_t rev0 = mce_session_chart_revision(session);
     const mce_beat beat{2, 0, 1};
     bool ok = mce_session_note_count(session) == 0 &&
+              rev0 > 0 &&
               mce_session_add_normal_note(session, "ffi-a", beat, 128) == 1 &&
-              mce_session_note_count(session) == 1;
+              mce_session_note_count(session) == 1 &&
+              mce_session_chart_revision(session) > rev0;
 
     mce_note_snapshot note{};
     ok = ok &&
@@ -44,6 +47,39 @@ bool testInvalidAddReportsError()
                     mce_session_note_count(session) == 0 &&
                     std::strlen(mce_session_last_error(session)) > 0;
 
+    mce_session_destroy(session);
+    return ok;
+}
+
+bool testVersionAndAbi()
+{
+    const char *version = mce_core_version();
+    const int32_t abi = mce_ffi_abi_version();
+    return version != nullptr &&
+           std::strlen(version) > 0 &&
+           abi >= 1;
+}
+
+bool testBatchSnapshots()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool okCreate = mce_session_add_normal_note(session, "n1", mce_beat{1, 0, 1}, 100) == 1 &&
+                          mce_session_add_normal_note(session, "n2", mce_beat{2, 0, 1}, 200) == 1 &&
+                          mce_session_add_normal_note(session, "n3", mce_beat{3, 0, 1}, 300) == 1;
+    if (!okCreate)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot out[4]{};
+    const int32_t count = mce_session_get_note_snapshots(session, 1, 4, out);
+    const bool ok = count == 2 &&
+                    std::strcmp(out[0].id, "n2") == 0 &&
+                    std::strcmp(out[1].id, "n3") == 0;
     mce_session_destroy(session);
     return ok;
 }
@@ -175,6 +211,8 @@ int main()
     const Case cases[] = {
         {"Create add snapshot undo", &testCreateAddSnapshotUndo},
         {"Invalid add reports error", &testInvalidAddReportsError},
+        {"Version and ABI", &testVersionAndAbi},
+        {"Batch snapshots", &testBatchSnapshots},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},
         {"Sound add snapshot and validation", &testSoundAddSnapshotAndValidation},

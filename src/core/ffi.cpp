@@ -37,6 +37,21 @@ int32_t ok(bool value)
 {
     return value ? 1 : 0;
 }
+
+void fillSnapshot(const mce::Note &note, mce_note_snapshot *out_note)
+{
+    if (!out_note)
+        return;
+    std::memset(out_note, 0, sizeof(*out_note));
+    copyCString(out_note->id, static_cast<int>(sizeof(out_note->id)), note.id);
+    out_note->type = mce::noteTypeToInt(note.type);
+    out_note->beat = toFfiBeat(note.beat);
+    out_note->end_beat = toFfiBeat(note.endBeat);
+    out_note->x = note.x;
+    copyCString(out_note->sound, static_cast<int>(sizeof(out_note->sound)), note.sound);
+    out_note->volume = note.volume;
+    out_note->offset_ms = note.offsetMs;
+}
 } // namespace
 
 mce_session *mce_session_create(void)
@@ -63,11 +78,28 @@ const char *mce_session_last_error(const mce_session *session)
     return session->impl.lastError().c_str();
 }
 
+const char *mce_core_version(void)
+{
+    return "0.2.0";
+}
+
+int32_t mce_ffi_abi_version(void)
+{
+    return 1;
+}
+
 int32_t mce_session_note_count(const mce_session *session)
 {
     if (!session)
         return -1;
     return static_cast<int32_t>(session->impl.chart().notes.size());
+}
+
+uint64_t mce_session_chart_revision(const mce_session *session)
+{
+    if (!session)
+        return 0;
+    return session->impl.revision();
 }
 
 int32_t mce_session_get_note_snapshot(const mce_session *session,
@@ -82,16 +114,32 @@ int32_t mce_session_get_note_snapshot(const mce_session *session,
         return 0;
 
     const mce::Note &note = notes[static_cast<std::size_t>(index)];
-    std::memset(out_note, 0, sizeof(*out_note));
-    copyCString(out_note->id, static_cast<int>(sizeof(out_note->id)), note.id);
-    out_note->type = mce::noteTypeToInt(note.type);
-    out_note->beat = toFfiBeat(note.beat);
-    out_note->end_beat = toFfiBeat(note.endBeat);
-    out_note->x = note.x;
-    copyCString(out_note->sound, static_cast<int>(sizeof(out_note->sound)), note.sound);
-    out_note->volume = note.volume;
-    out_note->offset_ms = note.offsetMs;
+    fillSnapshot(note, out_note);
     return 1;
+}
+
+int32_t mce_session_get_note_snapshots(const mce_session *session,
+                                       int32_t start_index,
+                                       int32_t max_count,
+                                       mce_note_snapshot *out_notes)
+{
+    if (!session || !out_notes || start_index < 0 || max_count <= 0)
+        return 0;
+
+    const auto &notes = session->impl.chart().notes;
+    const std::size_t start = static_cast<std::size_t>(start_index);
+    if (start >= notes.size())
+        return 0;
+
+    const std::size_t remaining = notes.size() - start;
+    const std::size_t requested = static_cast<std::size_t>(max_count);
+    const std::size_t count = std::min(remaining, requested);
+
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        fillSnapshot(notes[start + i], &out_notes[i]);
+    }
+    return static_cast<int32_t>(count);
 }
 
 int32_t mce_session_add_normal_note(mce_session *session,
