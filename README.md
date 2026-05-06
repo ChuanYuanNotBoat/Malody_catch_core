@@ -14,6 +14,13 @@ a C ABI layer for Flutter `dart:ffi`.
 - This repo remains versioned independently (`mce_core_version` / `mce_ffi_abi_version`),
   while keeping compatibility tracking with desktop release updates.
 
+## Mobile MCZ Scope Note
+
+- Current `.mcz` import/export workflow is implemented in
+  `Malody_catch_mobile` application layer.
+- Core C ABI remains unchanged at `mce_ffi_abi_version = 4` in this milestone.
+- No `mce_*` symbol additions or signature changes were introduced.
+
 ## Repository Role
 
 - Own chart data structures, edit commands, undo/redo, timing math, `.mc`

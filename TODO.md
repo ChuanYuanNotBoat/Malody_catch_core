@@ -80,3 +80,9 @@
 - [ ] Flutter 端可以 create session、添加音符、读取 snapshot、undo/redo。
 - [ ] `.mc/.mcz` 行为与桌面端现有导入导出兼容。
 - [ ] 所有 FFI API 对空指针和非法输入稳定返回错误，不崩溃。
+
+## Milestone Note (2026-05-07)
+
+- `.mcz` end-to-end import/export is handled in `Malody_catch_mobile` app layer.
+- Core FFI ABI stays at `mce_ffi_abi_version = 4`.
+- No new/changed exported `mce_*` symbols in this milestone.
