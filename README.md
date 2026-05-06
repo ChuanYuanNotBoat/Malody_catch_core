@@ -7,6 +7,13 @@ This repository was split from `Malody_catch_editor` with history preserved by
 working with QtCore/QtGui while the code is migrated toward a pure C++ core and
 a C ABI layer for Flutter `dart:ffi`.
 
+## Desktop Sync Baseline
+
+- Synced desktop editor release target: `desktop main` (`2026-05-05`)
+- Source commit from sibling repo `Malody_catch_editor`: `2f60ae6`
+- This repo remains versioned independently (`mce_core_version` / `mce_ffi_abi_version`),
+  while keeping compatibility tracking with desktop release updates.
+
 ## Repository Role
 
 - Own chart data structures, edit commands, undo/redo, timing math, `.mc`
