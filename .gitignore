@@ -26,3 +26,16 @@ cmake_install.cmake
 Thumbs.db
 *.tmp
 *.bak
+
+# Codex workflow temp context files
+.codex_tmp/
+context_checkpoints/
+*.codex.tmp
+SYNC_EXECUTION_CONTEXT_*.md
+
+# Local environment config
+.env
+.env.*
+!.env.example
+*.local
+CMakeUserPresets.json
