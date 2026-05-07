@@ -85,5 +85,7 @@
 
 - `.mcz` end-to-end import/export is handled in `Malody_catch_mobile` app layer.
 - Mobile playback orchestration is handled in `Malody_catch_mobile` app layer.
+- Mobile desktop-aligned editor interaction semantics are handled in
+  `Malody_catch_mobile` app layer.
 - Core FFI ABI stays at `mce_ffi_abi_version = 4`.
 - No new/changed exported `mce_*` symbols in this milestone.

@@ -20,6 +20,9 @@ a C ABI layer for Flutter `dart:ffi`.
   `Malody_catch_mobile` application layer.
 - Current mobile audio playback orchestration (play/pause/seek/rate and
   playhead UI sync) is implemented in `Malody_catch_mobile` application layer.
+- Current mobile desktop-aligned editor interaction semantics (mode switching,
+  time-division snap, grid snap/division, selection nudge/copy-paste flow) are
+  implemented in `Malody_catch_mobile` application layer.
 - Core C ABI remains unchanged at `mce_ffi_abi_version = 4` in this milestone.
 - No `mce_*` symbol additions or signature changes were introduced.
 
