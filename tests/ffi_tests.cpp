@@ -371,6 +371,119 @@ bool testApplyNoteBatchSingleUndoStep()
     return oldAMovedBack && oldBRestored;
 }
 
+bool testApplyNoteBatchFailureIsAtomic()
+{
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool seeded = mce_session_add_normal_note(session, "atomic-a", mce_beat{1, 0, 1}, 100) == 1 &&
+                        mce_session_add_normal_note(session, "atomic-b", mce_beat{2, 0, 1}, 200) == 1;
+    if (!seeded)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    const int32_t beforeCount = mce_session_note_count(session);
+    const uint64_t beforeRevision = mce_session_chart_revision(session);
+
+    mce_note_batch_op ops[2]{};
+    ops[0].op_type = MCE_NOTE_BATCH_OP_MOVE;
+    std::snprintf(ops[0].note.id, sizeof(ops[0].note.id), "atomic-a");
+    ops[0].note.type = 0;
+    ops[0].note.beat = mce_beat{3, 0, 1};
+    ops[0].note.end_beat = ops[0].note.beat;
+    ops[0].note.x = 300;
+
+    // This op is invalid: missing id for remove.
+    ops[1].op_type = MCE_NOTE_BATCH_OP_REMOVE;
+    ops[1].note.id[0] = '\0';
+
+    const bool rejected = mce_session_apply_note_batch(session, ops, 2) == 0 &&
+                          mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT;
+    if (!rejected)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    if (mce_session_note_count(session) != beforeCount ||
+        mce_session_chart_revision(session) != beforeRevision)
+    {
+        mce_session_destroy(session);
+        return false;
+    }
+
+    mce_note_snapshot noteA{};
+    mce_note_snapshot noteB{};
+    const bool unchanged = mce_session_get_note_snapshot(session, 0, &noteA) == 1 &&
+                           mce_session_get_note_snapshot(session, 1, &noteB) == 1 &&
+                           std::strcmp(noteA.id, "atomic-a") == 0 &&
+                           noteA.beat.measure == 1 &&
+                           noteA.x == 100 &&
+                           std::strcmp(noteB.id, "atomic-b") == 0 &&
+                           noteB.beat.measure == 2 &&
+                           noteB.x == 200;
+
+    mce_session_destroy(session);
+    return unchanged;
+}
+
+bool testInvalidSessionAndArgumentHandling()
+{
+    mce_note_snapshot note{};
+    mce_chart_summary summary{};
+    mce_bpm_snapshot bpm{};
+    mce_metadata_snapshot meta{};
+    mce_note_batch_op op{};
+    char err[16]{};
+
+    const bool nullSession = mce_session_note_count(nullptr) == -1 &&
+                             mce_session_chart_revision(nullptr) == 0 &&
+                             mce_session_last_error_code(nullptr) == MCE_ERROR_INVALID_SESSION &&
+                             std::strcmp(mce_session_last_error(nullptr), "Invalid session.") == 0 &&
+                             mce_session_get_note_snapshot(nullptr, 0, &note) == 0 &&
+                             mce_session_get_chart_summary(nullptr, &summary) == 0 &&
+                             mce_session_bpm_count(nullptr) == -1 &&
+                             mce_session_get_bpm_snapshot(nullptr, 0, &bpm) == 0 &&
+                             mce_session_get_metadata(nullptr, &meta) == 0 &&
+                             mce_session_set_metadata(nullptr, &meta) == 0 &&
+                             mce_session_add_bpm(nullptr, mce_beat{0, 0, 1}, 120.0) == 0 &&
+                             mce_session_apply_note_batch(nullptr, &op, 1) == 0 &&
+                             mce_session_remove_note_by_id(nullptr, "x") == 0 &&
+                             mce_session_undo(nullptr) == 0 &&
+                             mce_session_redo(nullptr) == 0 &&
+                             mce_session_copy_last_error(nullptr, err, static_cast<int32_t>(sizeof(err))) > 0;
+
+    if (!nullSession)
+        return false;
+
+    mce_session *session = mce_session_create();
+    if (!session)
+        return false;
+
+    const bool invalidArgs = mce_session_get_note_snapshot(session, 0, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_get_note_snapshots(session, 0, 0, &note) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_get_chart_summary(session, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_get_bpm_snapshot(session, 0, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_get_metadata(session, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_set_metadata(session, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_apply_note_batch(session, nullptr, 1) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT &&
+                             mce_session_remove_note_by_id(session, nullptr) == 0 &&
+                             mce_session_last_error_code(session) == MCE_ERROR_INVALID_ARGUMENT;
+
+    mce_session_destroy(session);
+    return invalidArgs;
+}
+
 bool testChartSummarySnapshot()
 {
     mce_session *session = mce_session_create();
@@ -598,6 +711,8 @@ int main()
         {"BPM APIs and undo", &testBpmApisAndUndo},
         {"Metadata APIs and validation", &testMetadataApisAndValidation},
         {"Apply note batch single undo step", &testApplyNoteBatchSingleUndoStep},
+        {"Apply note batch failure is atomic", &testApplyNoteBatchFailureIsAtomic},
+        {"Invalid session and argument handling", &testInvalidSessionAndArgumentHandling},
         {"Chart summary snapshot", &testChartSummarySnapshot},
         {"Rain add move and snapshot", &testRainAddMoveAndSnapshot},
         {"Rain validation reports error", &testRainValidationReportsError},
