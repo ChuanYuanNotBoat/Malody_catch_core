@@ -68,6 +68,19 @@ if(BUILD_TESTING)
     add_test(NAME pure_core_model_tests COMMAND malody_catch_core_model_tests)
     add_test(NAME pure_core_editor_session_tests COMMAND malody_catch_core_editor_session_tests)
     add_test(NAME pure_core_ffi_tests COMMAND malody_catch_core_ffi_tests)
+    find_program(MCE_POWERSHELL_EXECUTABLE NAMES pwsh powershell)
+    if(MCE_POWERSHELL_EXECUTABLE)
+        add_test(
+            NAME pure_core_ffi_symbol_guard
+            COMMAND ${MCE_POWERSHELL_EXECUTABLE}
+                -NoProfile
+                -ExecutionPolicy Bypass
+                -File ${CMAKE_SOURCE_DIR}/tools/check_ffi_symbols.ps1
+                -BinaryPath $<TARGET_FILE:malody_catch_core_ffi>
+                -BaselinePath ${CMAKE_SOURCE_DIR}/tests/ffi_symbols_abi4.txt
+                -ReportPath ${CMAKE_BINARY_DIR}/ffi_symbol_report.txt
+        )
+    endif()
 
     if(MCE_BUILD_QT_TRANSITIONAL)
         add_executable(MalodyCatchCoreTests
