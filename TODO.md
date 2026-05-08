@@ -1,91 +1,51 @@
-# Malody Catch Core TODO
+﻿# Malody Catch Core TODO（代码真相版 / 细化执行）
 
-## Thread1 Notes (2026-04-29)
+更新日期：2026-05-07
+适用仓库：`Malody_catch_core`
+协作约束：与 `Malody_catch_mobile` 协同推进，不修改桌面仓库。
 
-- [x] Added stable FFI error-code API: `mce_session_last_error_code` and `mce_error_code_name`.
-- [x] Added per-call error-code updates for note/snapshot/edit/undo-redo paths.
-- [x] Added tests for stable error-code semantics and exported symbols.
-- [x] Added core-side auto ID generation for empty create-note IDs (normal/rain/sound).
-- [x] Added FFI BPM edit APIs (count/get/add/update/remove) and metadata get/set APIs.
-- [x] Added batch note edit API (`mce_session_apply_note_batch`) with single-step undo semantics.
+## 状态语义
 
-更新日期：2026-04-29
+- `[x]` 完成
+- `[~]` 进行中
+- `[ ]` 待做
 
-## 近期目标
+## M1 支撑 mobile 发布闭环（进行中）
 
-把当前双轨 core 推进到可被 Flutter Android 端实际集成：
+| ID | 优先级 | 状态 | 任务 | 备注 |
+| --- | --- | --- | --- | --- |
+| COR-M1-001 | P0 | [x] | ABI4 冻结规则 | 已补 `docs/abi4_freeze_policy.md` |
+| COR-M1-002 | P0 | [x] | 导出符号变更门禁 | 已补 `tools/check_ffi_symbols.ps1` + CTest 门禁 |
+| COR-M1-003 | P0 | [x] | 错误码语义与映射文档 | 已补 `docs/ffi_error_code_contract.md` |
+| COR-M1-004 | P0 | [x] | `arm64-v8a` 构建流程 | 已补 `docs/android_arm64_build_sop.md` |
+| COR-M1-005 | P0 | [x] | 产物命名和目录规范 | 已补 `docs/android_artifact_contract.md` |
+| COR-M1-006 | P0 | [x] | FFI 负向测试 | 已补空会话/空指针/非法参数等测试 |
+| COR-M1-007 | P0 | [x] | mobile 对齐回归样本 | 已补 `docs/mobile_alignment_samples.md` |
+| COR-M1-008 | P0 | [x] | 桌面行为 -> core 语义映射 | 已补 `docs/desktop_core_semantics_mapping.md` |
+| COR-M1-009 | P1 | [x] | 批处理失败一致性测试 | 已验证失败原子性与 revision 不污染 |
+| COR-M1-010 | P1 | [x] | 桌面对齐协同样本输入集 | 已落到协同样本文档 |
 
-- `malody_catch_core_pure` 承载纯 C++ 业务逻辑。
-- `malody_catch_core_ffi` 暴露稳定 C ABI。
-- 旧 Qt 过渡层只作为行为对照，逐步退场。
+### M1 退出检查
 
-## P0 - Core 数据与编辑闭环
+- [~] `.so` 构建和同步流程可重复执行且可追溯（流程已固化，真机多轮验证待补）。
+- [x] 符号与 ABI 门禁可自动发现破坏性变更。
+- [x] FFI 负向场景测试通过且错误码可解释。
 
-- [x] 建立纯 C++ `mce::Note` / `mce::Chart` / `mce::MetaData` / `mce::BpmEntry`。
-- [x] 建立纯 C++ `mce::EditorSession`。
-- [x] 建立最小 C ABI：session、普通音符 add/remove、snapshot、undo/redo。
-- [x] 增加 rain note FFI：添加、移动、校验、snapshot。
-- [x] 增加 sound note FFI：添加、校验、snapshot。
-- [ ] 增加批量编辑 API：一次提交 add/remove/move，作为单个 undo step。
-- [ ] 增加 BPM 编辑 API：add/update/remove BPM。
-- [ ] 增加 metadata 读写 API。
-- [ ] 将 `EditorSession` 的错误模型从单字符串扩展为稳定错误码 + message。
-- [ ] 明确 note id 生成策略：空 id 由 core 生成；外部传入 id 时保持不变。
+## M2/M3（待做）
 
-## P1 - 文件 IO 纯 C++ 化
+- [ ] `.mc/.mcz` pure C++ 主流程迁移。
+- [ ] 路径安全层与 zip slip 规则内建。
+- [ ] 无 Qt 场景默认构建与 CI 最小矩阵收敛。
 
-- [ ] 选定并集成 JSON 库，默认使用 `nlohmann/json`。
-- [ ] 新建纯 C++ `.mc` parser/writer，不依赖 Qt JSON。
-- [ ] 覆盖现有 `ChartIO` 行为：BPM、normal、rain、sound、meta、兼容字段。
-- [ ] 添加 `.mc` round-trip 测试：读取后保存再读取，核心字段一致。
-- [ ] 选定并集成 zip 库，默认使用 `miniz`。
-- [ ] 新建纯 C++ `.mcz` extract/export，不依赖 `QProcess` 或系统 `zip/unzip`。
-- [ ] 覆盖 Malody 兼容导出结构：顶层 `0/`。
-- [ ] 添加路径安全校验，拒绝 zip slip 和绝对路径。
+## 最小协同验收清单（执行面）
 
-## P2 - 时间与编辑规则迁移
+- [ ] `mce_ffi_abi_version` 与 mobile 依赖一致。
+- [ ] `arm64-v8a` `.so` 可按文档从干净环境构建。
+- [x] FFI 负向场景（空指针/越界/非法输入）不崩溃且错误码稳定。
+- [ ] mobile 关键行为样本（add/move/batch/undo/redo）对齐通过。
+- [x] 导出符号与结构布局变更有可追踪记录。
 
-- [ ] 从旧 `MathUtils` 迁移 beat/ms 换算到纯 C++ `mce::TimeMapper`。
-- [ ] 增加分数拍号规范化工具，避免移动后分母异常漂移。
-- [ ] 增加 grid snap API：时间吸附、x 边界吸附。
-- [ ] 增加多选整体移动 API，保持相对时间差。
-- [ ] 增加复制/粘贴 API，支持粘贴偏移和单步 undo。
-- [ ] 增加 rain end beat 合法性保护。
-- [ ] 增加 Hyperfruit 判定纯 C++ 版本，供移动端绘制红框。
+## 责任边界
 
-## P3 - FFI 稳定化
-
-- [x] 为 FFI 增加版本查询：`mce_core_version`、`mce_ffi_abi_version`。
-- [x] 为 snapshot 增加 chart revision，移动端可判断缓存是否失效。
-- [x] 增加 note snapshot 批量读取，避免 Flutter 逐条 FFI 调用过多。
-- [x] 增加 chart summary snapshot：note count、BPM count、meta summary。
-- [x] 增加字符串内存策略文档：固定缓冲区优先，动态字符串必须配套 free。
-- [ ] 增加 Android ABI 构建产物命名规范：`libmalody_catch_core_ffi.so`。
-- [x] 增加导出符号检查脚本或测试。
-
-## P4 - 构建与仓库治理
-
-- [ ] 将 Qt 过渡 target 与纯 C++ target 分离为 CMake option。
-- [ ] 默认构建纯 C++ target，不要求 Qt。
-- [ ] 增加 Android NDK toolchain 构建说明。
-- [ ] 增加 CI：Windows desktop transitional test、pure C++ test、Android cross-build。
-- [ ] 增加 `third_party` 依赖记录和许可证说明。
-- [ ] 增加格式化规范：clang-format 或明确不自动格式化。
-- [ ] 整理旧 Qt 过渡层删除计划，逐个替换 `src/model`、`src/file`、`src/controller`。
-
-## 验收清单
-
-- [ ] 不设置 Qt 路径时，纯 C++ core 可以配置、构建、测试。
-- [ ] Android arm64-v8a 可以产出 FFI `.so`。
-- [ ] Flutter 端可以 create session、添加音符、读取 snapshot、undo/redo。
-- [ ] `.mc/.mcz` 行为与桌面端现有导入导出兼容。
-- [ ] 所有 FFI API 对空指针和非法输入稳定返回错误，不崩溃。
-
-## Milestone Note (2026-05-07)
-
-- `.mcz` end-to-end import/export is handled in `Malody_catch_mobile` app layer.
-- Mobile playback orchestration is handled in `Malody_catch_mobile` app layer.
-- Mobile desktop-aligned editor interaction semantics are handled in
-  `Malody_catch_mobile` app layer.
-- Core FFI ABI stays at `mce_ffi_abi_version = 4`.
-- No new/changed exported `mce_*` symbols in this milestone.
+- core 负责：编辑规则、模型、撤销重做、FFI 稳定契约。
+- mobile 负责：文件入口、`.mcz` 工作流、音频编排、UI/交互、发布工程化。

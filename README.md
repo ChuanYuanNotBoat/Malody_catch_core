@@ -26,6 +26,21 @@ a C ABI layer for Flutter `dart:ffi`.
 - Core C ABI remains unchanged at `mce_ffi_abi_version = 4` in this milestone.
 - No `mce_*` symbol additions or signature changes were introduced.
 
+## Desktop Parity Contract (Feature / Semantics)
+
+- Reference desktop baseline:
+  `Malody_catch_editor@2f60ae6` (`desktop main`, `2026-05-05`)
+- Core parity responsibility:
+  keep editing primitives and state semantics aligned with desktop behavior
+  (add/move/remove/batch, undo/redo, snapshot/revision, bpm/meta updates).
+- Non-core parity responsibility:
+  desktop GUI layout, panel interactions, audio runtime, and plugin workflows
+  are explicitly out of scope for this repository.
+- Mobile GUI/gesture parity is tracked in `Malody_catch_mobile`; this repo
+  only guarantees a stable behavior contract through the C ABI.
+- Ongoing parity governance tasks are tracked in `TODO.md`
+  (`COR-M1-008/009/010`).
+
 ## Repository Role
 
 - Own chart data structures, edit commands, undo/redo, timing math, `.mc`
@@ -50,6 +65,40 @@ a C ABI layer for Flutter `dart:ffi`.
 cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
+```
+
+FFI symbol guard report is emitted to:
+
+- `build/ffi_symbol_report.txt` (or your chosen build directory)
+- CI/local helper:
+  `tools/run_ffi_symbol_guard.ps1`
+- CI usage note:
+  `docs/ffi_symbol_guard_ci.md`
+
+## FFI Symbol Guard
+
+- FFI export baseline file: `tests/ffi_symbols_abi4.txt`
+- Guard script: `tools/check_ffi_symbols.ps1`
+- Included in CTest as `pure_core_ffi_symbol_guard` when PowerShell is available.
+- ABI freeze policy:
+  `docs/abi4_freeze_policy.md`
+- Error code contract:
+  `docs/ffi_error_code_contract.md`
+- Android arm64 build SOP:
+  `docs/android_arm64_build_sop.md`
+- Android artifact contract:
+  `docs/android_artifact_contract.md`
+- Desktop semantics mapping:
+  `docs/desktop_core_semantics_mapping.md`
+- Mobile alignment samples:
+  `docs/mobile_alignment_samples.md`
+- Manual run example:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\check_ffi_symbols.ps1 `
+  -BinaryPath .\build\Release\malody_catch_core_ffi.dll `
+  -BaselinePath .\tests\ffi_symbols_abi4.txt
 ```
 
 ## Migration Targets
