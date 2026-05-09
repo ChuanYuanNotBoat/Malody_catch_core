@@ -1,6 +1,6 @@
-# Desktop Behavior to Core Semantics Mapping
+﻿# Desktop Behavior to Core Semantics Mapping
 
-Reference baseline: `Malody_catch_editor@2f60ae6`
+Reference baseline: `Malody_catch_editor@f3088da`
 
 ## Editing Operations
 
@@ -27,3 +27,4 @@ Reference baseline: `Malody_catch_editor@2f60ae6`
 
 - `mce_session_chart_revision()` changes only on successful state mutation.
 - Snapshot APIs must reflect latest committed state.
+

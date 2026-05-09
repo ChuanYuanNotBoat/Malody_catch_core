@@ -1,4 +1,4 @@
-# Malody Catch Core
+﻿# Malody Catch Core
 
 Shared chart-editing core for Malody Catch tooling.
 
@@ -9,8 +9,8 @@ a C ABI layer for Flutter `dart:ffi`.
 
 ## Desktop Sync Baseline
 
-- Synced desktop editor release target: `desktop main` (`2026-05-05`)
-- Source commit from sibling repo `Malody_catch_editor`: `2f60ae6`
+- Synced desktop editor release target: `desktop main` (`2026-05-09`)
+- Source commit from sibling repo `Malody_catch_editor`: `f3088da`
 - This repo remains versioned independently (`mce_core_version` / `mce_ffi_abi_version`),
   while keeping compatibility tracking with desktop release updates.
 
@@ -29,7 +29,7 @@ a C ABI layer for Flutter `dart:ffi`.
 ## Desktop Parity Contract (Feature / Semantics)
 
 - Reference desktop baseline:
-  `Malody_catch_editor@2f60ae6` (`desktop main`, `2026-05-05`)
+  `Malody_catch_editor@f3088da` (`desktop main`, `2026-05-09`, sync scope: `2f60ae6..f3088da`)
 - Core parity responsibility:
   keep editing primitives and state semantics aligned with desktop behavior
   (add/move/remove/batch, undo/redo, snapshot/revision, bpm/meta updates).
@@ -39,7 +39,7 @@ a C ABI layer for Flutter `dart:ffi`.
 - Mobile GUI/gesture parity is tracked in `Malody_catch_mobile`; this repo
   only guarantees a stable behavior contract through the C ABI.
 - Ongoing parity governance tasks are tracked in `TODO.md`
-  (`COR-M1-008/009/010`).
+  (`COR-M1-008/009/010/011`).
 
 ## Repository Role
 
@@ -119,3 +119,5 @@ The repository now has two build tracks:
   and undo/redo.
 - `MalodyCatchCore`: transitional Qt-backed implementation kept alive so
   behavior can be migrated incrementally without breaking existing tests.
+
+

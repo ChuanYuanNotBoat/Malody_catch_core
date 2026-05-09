@@ -1,6 +1,6 @@
 ﻿# Malody Catch Core TODO（代码真相版 / 细化执行）
 
-更新日期：2026-05-07
+更新日期：2026-05-10
 适用仓库：`Malody_catch_core`
 协作约束：与 `Malody_catch_mobile` 协同推进，不修改桌面仓库。
 
@@ -24,6 +24,7 @@
 | COR-M1-008 | P0 | [x] | 桌面行为 -> core 语义映射 | 已补 `docs/desktop_core_semantics_mapping.md` |
 | COR-M1-009 | P1 | [x] | 批处理失败一致性测试 | 已验证失败原子性与 revision 不污染 |
 | COR-M1-010 | P1 | [x] | 桌面对齐协同样本输入集 | 已落到协同样本文档 |
+| COR-M1-011 | P1 | [x] | 对齐桌面 `v1.10.2` 基线治理 | 已更新 baseline 到 `f3088da`，并明确本轮不引入 ABI/核心逻辑改造 |
 
 ### M1 退出检查
 
